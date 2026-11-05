@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createDemo} from '../dist/domain.js';
 import {initializeFarmer,syncInbox,voiceKeys,validatePush,mergePushInbox} from '../dist/farmer-notifications.js';
-import {LANGUAGES,textFor,voicePhrases,messageText,positionFor} from '../dist/farmer-language.js';
+import {LANGUAGES,textFor,voicePhrases,messageText,positionFor,powerLevel} from '../dist/farmer-language.js';
 test('language selection is required, no unsolicited speech enabled',()=>{const s=initializeFarmer(createDemo());assert.equal(s.farmer.onboarded,false);assert.equal(s.farmer.voiceAlerts,false);assert.equal(s.farmer.phoneNotifications,false);assert.equal(s.farmer.inbox.length,3);});
 test('persisted farmer settings and messages survive migration',()=>{const s=createDemo();s.farmer={onboarded:true,language:'hi',seeded:true,inbox:[{id:'keep'}]};initializeFarmer(s);assert.equal(s.farmer.language,'hi');assert.equal(s.farmer.inbox[0].id,'keep');});
 test('repeated observations do not spam messages',()=>{const s=initializeFarmer(createDemo());for(let i=0;i<10;i++){s.alerts[0].at=new Date().toISOString();assert.equal(syncInbox(s).length,0);}assert.equal(s.farmer.inbox.length,3);});
@@ -15,3 +15,23 @@ test('all three languages have matching audio keys and nonempty UI content',()=>
 test('position label does not depend on reading English zone IDs',()=>{assert.equal(positionFor({x:1,y:2},'ta'),'தென்கிழக்கு பகுதி');assert.equal(positionFor({x:0,y:0},'hi'),'उत्तर-पश्चिम हिस्सा');});
 test('push payloads allow only typed farm alerts, not arbitrary links/commands/audio',()=>{const valid={schema:'agrova.alert.v1',id:'incident-42',type:'weed',zone:'B1',at:new Date().toISOString(),audioUrl:'https://unknown/audio',command:'spray'};const entry=validatePush(valid);assert.equal(entry.source,'live');assert.equal(entry.id,'push-incident-42');assert.equal(entry.audioUrl,undefined);assert.equal(entry.command,undefined);for(const changes of [{schema:'wrong'},{id:'<script>'},{zone:'../../etc'},{type:'spray'},{at:'bad'}])assert.throws(()=>validatePush({...valid,...changes}));});
 test('push replay does not duplicate the inbox',()=>{const s=initializeFarmer(createDemo());const e=validatePush({schema:'agrova.alert.v1',id:'abc',type:'crop',zone:'B2',at:new Date().toISOString()});assert.equal(mergePushInbox(s,[e]).length,1);assert.equal(mergePushInbox(s,[e]).length,0);});
+test('powerLevel maps percentages to usual power level indicating words without using "power is okay"',()=>{
+  assert.equal(powerLevel(100,'en'),'Full');
+  assert.equal(powerLevel(92,'en'),'Full');
+  assert.equal(powerLevel(82,'en'),'High');
+  assert.equal(powerLevel(65,'en'),'High');
+  assert.equal(powerLevel(50,'en'),'Medium');
+  assert.equal(powerLevel(25,'en'),'Medium');
+  assert.equal(powerLevel(20,'en'),'Low');
+  assert.equal(powerLevel(12,'en'),'Low');
+  assert.equal(powerLevel(8,'en'),'Critical');
+  assert.equal(powerLevel(0,'en'),'Critical');
+  for(const lang of LANGUAGES){
+    const words=[powerLevel(100,lang),powerLevel(82,lang),powerLevel(50,lang),powerLevel(20,lang),powerLevel(5,lang)];
+    for(const w of words){
+      assert.ok(w&&w.length>0);
+      assert.doesNotMatch(w.toLowerCase(),/power is okay/);
+    }
+    assert.doesNotMatch(JSON.stringify(textFor(lang)).toLowerCase(),/power is okay/);
+  }
+});

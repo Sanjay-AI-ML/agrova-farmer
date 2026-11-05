@@ -3,5 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "scripts": { "test": "node --test tests/domain.test.mjs tests/farmer.test.mjs tests/premium.test.mjs" }
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test tests/domain.test.mjs tests/farmer.test.mjs tests/premium.test.mjs"
+  }
 }
