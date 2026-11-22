@@ -152,3 +152,203 @@ export function sprayRequirement(labelDosePerLitre, areaHa, waterLPerHa = 400, t
     }
   };
 }
+
+/**
+ * Formats class name into a clean, human-readable label.
+ */
+export function formatClassName(className) {
+  if (!className) return 'Unknown';
+  const parts = String(className).split('___');
+  const crop = (parts[0] || '').replace(/_/g, ' ').replace(/\(including sour\)/i, '').trim();
+  const rawCondition = (parts[1] || 'healthy').replace(/_/g, ' ').trim();
+  const condition = rawCondition.split(' ').map(w => w ? w.charAt(0).toUpperCase() + w.slice(1) : '').join(' ');
+  return `${crop} — ${condition}`;
+}
+
+export const PRESET_SAMPLES = [
+  {
+    id: 'sample_tomato_early_blight',
+    crop: 'Tomato',
+    diseaseName: 'Early Blight',
+    pathogen: 'fungal',
+    targetClass: 'Tomato___Early_blight',
+    confidence: 0.948,
+    top3: [
+      { class: 'Tomato___Early_blight', prob: 0.948 },
+      { class: 'Tomato___Target_Spot', prob: 0.034 },
+      { class: 'Tomato___Septoria_leaf_spot', prob: 0.012 }
+    ],
+    symptoms: 'Concentric dark brown rings ("target-board" spots) surrounded by chlorotic yellow halos on lower leaflets.',
+    recommendedDose: 2.0,
+    unit: 'g'
+  },
+  {
+    id: 'sample_potato_late_blight',
+    crop: 'Potato',
+    diseaseName: 'Late Blight',
+    pathogen: 'oomycete',
+    targetClass: 'Potato___Late_blight',
+    confidence: 0.962,
+    top3: [
+      { class: 'Potato___Late_blight', prob: 0.962 },
+      { class: 'Potato___Early_blight', prob: 0.027 },
+      { class: 'Tomato___Late_blight', prob: 0.009 }
+    ],
+    symptoms: 'Water-soaked irregular dark lesions rapidly expanding across foliage in cool, humid weather.',
+    recommendedDose: 2.5,
+    unit: 'g'
+  },
+  {
+    id: 'sample_apple_scab',
+    crop: 'Apple',
+    diseaseName: 'Apple Scab',
+    pathogen: 'fungal',
+    targetClass: 'Apple___Apple_scab',
+    confidence: 0.931,
+    top3: [
+      { class: 'Apple___Apple_scab', prob: 0.931 },
+      { class: 'Apple___Black_rot', prob: 0.046 },
+      { class: 'Apple___Cedar_apple_rust', prob: 0.015 }
+    ],
+    symptoms: 'Velvety olive-green to dark brown circular spots appearing on upper leaf surfaces.',
+    recommendedDose: 2.0,
+    unit: 'g'
+  },
+  {
+    id: 'sample_corn_rust',
+    crop: 'Corn',
+    diseaseName: 'Common Rust',
+    pathogen: 'fungal',
+    targetClass: 'Corn_(maize)___Common_rust_',
+    confidence: 0.955,
+    top3: [
+      { class: 'Corn_(maize)___Common_rust_', prob: 0.955 },
+      { class: 'Corn_(maize)___Northern_Leaf_Blight', prob: 0.031 },
+      { class: 'Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot', prob: 0.011 }
+    ],
+    symptoms: 'Small, circular to elongate reddish-brown to cinnamon pustules scattered on upper leaf surfaces.',
+    recommendedDose: 2.0,
+    unit: 'g'
+  },
+  {
+    id: 'sample_grape_black_rot',
+    crop: 'Grape',
+    diseaseName: 'Black Rot',
+    pathogen: 'fungal',
+    targetClass: 'Grape___Black_rot',
+    confidence: 0.924,
+    top3: [
+      { class: 'Grape___Black_rot', prob: 0.924 },
+      { class: 'Grape___Leaf_blight_(Isariopsis_Leaf_Spot)', prob: 0.052 },
+      { class: 'Grape___Esca_(Black_Measles)', prob: 0.018 }
+    ],
+    symptoms: 'Reddish-brown circular spots with dark brown margins, later developing tiny black pycnidia.',
+    recommendedDose: 2.0,
+    unit: 'g'
+  },
+  {
+    id: 'sample_tomato_healthy',
+    crop: 'Tomato',
+    diseaseName: 'Healthy Leaf',
+    pathogen: 'healthy',
+    targetClass: 'Tomato___healthy',
+    confidence: 0.985,
+    top3: [
+      { class: 'Tomato___healthy', prob: 0.985 },
+      { class: 'Pepper,_bell___healthy', prob: 0.009 },
+      { class: 'Potato___healthy', prob: 0.004 }
+    ],
+    symptoms: 'Vibrant green, uniform leaf tissue with no necrotic spots, chlorosis, or pest lesions.',
+    recommendedDose: 0,
+    unit: 'g'
+  },
+  {
+    id: 'sample_peach_bacterial_spot',
+    crop: 'Peach',
+    diseaseName: 'Bacterial Spot',
+    pathogen: 'bacterial',
+    targetClass: 'Peach___Bacterial_spot',
+    confidence: 0.917,
+    top3: [
+      { class: 'Peach___Bacterial_spot', prob: 0.917 },
+      { class: 'Pepper,_bell___Bacterial_spot', prob: 0.056 },
+      { class: 'Peach___healthy', prob: 0.019 }
+    ],
+    symptoms: 'Angular, water-soaked purplish lesions that dry and drop out ("shot-hole" appearance).',
+    recommendedDose: 3.0,
+    unit: 'g'
+  },
+  {
+    id: 'sample_tomato_yellow_curl',
+    crop: 'Tomato',
+    diseaseName: 'Yellow Leaf Curl Virus',
+    pathogen: 'virus-vector',
+    targetClass: 'Tomato___Tomato_Yellow_Leaf_Curl_Virus',
+    confidence: 0.893,
+    top3: [
+      { class: 'Tomato___Tomato_Yellow_Leaf_Curl_Virus', prob: 0.893 },
+      { class: 'Tomato___Tomato_mosaic_virus', prob: 0.071 },
+      { class: 'Tomato___healthy', prob: 0.024 }
+    ],
+    symptoms: 'Severe stunting, upward leaf curling, chlorotic margins, transmitted by whiteflies.',
+    recommendedDose: 1.5,
+    unit: 'mL'
+  }
+];
+
+/**
+ * Diagnoses a preset sample.
+ */
+export function diagnoseSample(sampleId, language = 'en') {
+  const sample = PRESET_SAMPLES.find(s => s.id === sampleId) || PRESET_SAMPLES[0];
+  const advice = findAdvice(sample.targetClass, language);
+  return {
+    sample,
+    predictedClass: sample.targetClass,
+    formattedName: formatClassName(sample.targetClass),
+    confidence: sample.confidence,
+    top3: sample.top3.map(item => ({
+      class: item.class,
+      formattedName: formatClassName(item.class),
+      prob: item.prob,
+      percent: (item.prob * 100).toFixed(1) + '%'
+    })),
+    thresholdPassed: sample.confidence >= 0.70,
+    advice,
+    symptoms: sample.symptoms,
+    recommendedDose: sample.recommendedDose,
+    unit: sample.unit
+  };
+}
+
+/**
+ * Diagnoses an arbitrary class name.
+ */
+export function diagnoseClass(className, language = 'en') {
+  const cls = PLANT_CLASSES.includes(className) ? className : 'Tomato___Early_blight';
+  const advice = findAdvice(cls, language);
+  const sample = PRESET_SAMPLES.find(s => s.targetClass === cls);
+  const confidence = sample ? sample.confidence : (cls.includes('healthy') ? 0.96 : 0.88);
+  const top3 = sample ? sample.top3.map(item => ({
+    class: item.class,
+    formattedName: formatClassName(item.class),
+    prob: item.prob,
+    percent: (item.prob * 100).toFixed(1) + '%'
+  })) : [
+    { class: cls, formattedName: formatClassName(cls), prob: confidence, percent: (confidence * 100).toFixed(1) + '%' },
+    { class: 'Tomato___healthy', formattedName: 'Tomato — Healthy Leaf', prob: 0.07, percent: '7.0%' },
+    { class: 'Tomato___Target_Spot', formattedName: 'Tomato — Target Spot', prob: 0.05, percent: '5.0%' }
+  ];
+  return {
+    sample: sample || null,
+    predictedClass: cls,
+    formattedName: formatClassName(cls),
+    confidence,
+    top3,
+    thresholdPassed: confidence >= 0.70,
+    advice,
+    symptoms: sample ? sample.symptoms : 'Observed leaf discoloration and structural symptoms.',
+    recommendedDose: sample ? sample.recommendedDose : 2.0,
+    unit: sample ? sample.unit : 'g'
+  };
+}

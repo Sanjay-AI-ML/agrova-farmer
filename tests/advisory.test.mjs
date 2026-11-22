@@ -73,3 +73,98 @@ test('Model checkpoint and metadata exist in models directory', () => {
   const stat = fs.statSync(path.join(modelsDir, 'shufflenet_v2_x0_5-model-63.pth'));
   assert.ok(stat.size > 1900000); // ~1.99 MB checkpoint
 });
+
+test('Crop advisory helper functions provide presets, formatting and diagnosis', async () => {
+  const { PRESET_SAMPLES, formatClassName, diagnoseSample, diagnoseClass } = await import('../dist/crop-advisory.js');
+  assert.ok(PRESET_SAMPLES.length >= 6);
+  assert.equal(formatClassName('Tomato___Early_blight'), 'Tomato — Early Blight');
+  assert.equal(formatClassName('Apple___Apple_scab'), 'Apple — Apple Scab');
+
+  const diagPreset = diagnoseSample('sample_tomato_early_blight', 'en');
+  assert.equal(diagPreset.predictedClass, 'Tomato___Early_blight');
+  assert.equal(diagPreset.thresholdPassed, true);
+  assert.equal(diagPreset.top3.length, 3);
+  assert.ok(diagPreset.top3[0].prob > 0.9);
+
+  const diagClass = diagnoseClass('Potato___Late_blight', 'en');
+  assert.equal(diagClass.predictedClass, 'Potato___Late_blight');
+  assert.equal(diagClass.thresholdPassed, true);
+});
+
+test('Farmer experience renders interactive UI for Model 1 and Model 2', async () => {
+  const { createFarmerExperience, FARMER_PAGES } = await import('../dist/farmer.js');
+  const { createDemo } = await import('../dist/domain.js');
+  const { initializeFarmer } = await import('../dist/farmer-notifications.js');
+
+  assert.ok(FARMER_PAGES.includes('advisor'));
+  const demoState = initializeFarmer(createDemo());
+  demoState.farmer.onboarded = true;
+  demoState.farmer.language = 'en';
+  const exp = createFarmerExperience({
+    getState: () => demoState,
+    save: () => Promise.resolve(),
+    render: () => {},
+    toast: () => {},
+    action: () => {}
+  });
+
+  const html = exp.render('advisor');
+  // Model 1 assertions
+  assert.match(html, /ShuffleNet V2 x0\.5/);
+  assert.match(html, /Plant Disease Leaf Scanner/);
+  assert.match(html, /data-farm="select-leaf-sample"/);
+  assert.match(html, /Tomato/);
+  assert.match(html, /Early Blight/);
+  assert.match(html, /data-farm="run-model1-scan"/);
+  assert.match(html, /data-farm="trigger-leaf-upload"/);
+  assert.match(html, /Top-3 Predictions/);
+
+  // Model 2 assertions
+  assert.match(html, /Crop Treatment Advisory/);
+  assert.match(html, /Rover Spray Tank Dosage Calculator/);
+  assert.match(html, /data-farm-input="dose"/);
+  assert.match(html, /data-farm-input="area"/);
+  assert.match(html, /data-farm-input="waterRate"/);
+  assert.match(html, /data-farm-input="tankVol"/);
+  assert.match(html, /Total Spray Water/);
+  assert.match(html, /Total Chemical Product/);
+  assert.match(html, /Rover Tank Refills Needed/);
+  assert.match(html, /data-farm="save-spray-plan"/);
+});
+
+test('Advisor UI supports Tamil and Hindi localization', async () => {
+  const { createFarmerExperience } = await import('../dist/farmer.js');
+  const { createDemo } = await import('../dist/domain.js');
+  const { initializeFarmer } = await import('../dist/farmer-notifications.js');
+
+  const demoState = initializeFarmer(createDemo());
+  demoState.farmer.onboarded = true;
+
+  // Tamil
+  demoState.farmer.language = 'ta';
+  const expTa = createFarmerExperience({
+    getState: () => demoState,
+    save: () => Promise.resolve(),
+    render: () => {},
+    toast: () => {},
+    action: () => {}
+  });
+  const htmlTa = expTa.render('advisor');
+  assert.match(htmlTa, /பயிர் மருத்துவர் \/ AI ஆலோசனை/);
+  assert.match(htmlTa, /பயிர் இலை நோய் கண்டறிதல்/);
+  assert.match(htmlTa, /ரோவர் தெளிப்பு தொட்டி மருந்தளவு கணிப்பொறி/);
+
+  // Hindi
+  demoState.farmer.language = 'hi';
+  const expHi = createFarmerExperience({
+    getState: () => demoState,
+    save: () => Promise.resolve(),
+    render: () => {},
+    toast: () => {},
+    action: () => {}
+  });
+  const htmlHi = expHi.render('advisor');
+  assert.match(htmlHi, /फसल डॉक्टर \/ AI सलाह/);
+  assert.match(htmlHi, /पत्ती रोग जाँच स्कैनर/);
+  assert.match(htmlHi, /रोवर स्प्रे टैंक मात्रा कैलकुलेटर/);
+});
