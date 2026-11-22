@@ -1,0 +1,187 @@
+{
+  "general_safety": "Use only products registered for this crop in India (check CIBRC). Read the label: dose, water volume, waiting period before harvest. Wear gloves, mask, long clothes. Do not spray in wind or rain. Rotate active ingredients.",
+  "advisories": [
+    {
+      "crop": "apple",
+      "disease": "scab",
+      "kind": "fungal",
+      "action": "Remove fallen leaves; protectant fungicide at early infection.",
+      "candidates": ["mancozeb", "captan"]
+    },
+    {
+      "crop": "apple",
+      "disease": "black_rot",
+      "kind": "fungal",
+      "action": "Prune and destroy cankered twigs and mummified fruit; protectant fungicide.",
+      "candidates": ["captan", "mancozeb"]
+    },
+    {
+      "crop": "apple",
+      "disease": "cedar",
+      "kind": "fungal",
+      "action": "Remove nearby alternate hosts if possible; protectant fungicide from early season.",
+      "candidates": ["mancozeb"]
+    },
+    {
+      "crop": "cherry",
+      "disease": "powdery",
+      "kind": "fungal",
+      "action": "Improve airflow; start spray at first white patches.",
+      "candidates": ["wettable sulphur", "a triazole fungicide"]
+    },
+    {
+      "crop": "corn",
+      "disease": "gray_leaf",
+      "kind": "fungal",
+      "action": "Rotate crops; bury residue; fungicide if spreading to upper leaves.",
+      "candidates": ["a triazole or strobilurin fungicide"]
+    },
+    {
+      "crop": "corn",
+      "disease": "common_rust",
+      "kind": "fungal",
+      "action": "Usually minor; spray only if pustules reach upper leaves before tasselling.",
+      "candidates": ["mancozeb", "a triazole fungicide"]
+    },
+    {
+      "crop": "corn",
+      "disease": "northern",
+      "kind": "fungal",
+      "action": "Rotate crops; fungicide at early lesion stage.",
+      "candidates": ["mancozeb", "a triazole fungicide"]
+    },
+    {
+      "crop": "grape",
+      "disease": "black_rot",
+      "kind": "fungal",
+      "action": "Remove mummified berries; spray from early shoot growth.",
+      "candidates": ["mancozeb", "a triazole fungicide"]
+    },
+    {
+      "crop": "grape",
+      "disease": "esca",
+      "kind": "trunk",
+      "action": "NO chemical cure. Prune out affected wood in dry weather; protect pruning wounds; mark vines.",
+      "candidates": []
+    },
+    {
+      "crop": "grape",
+      "disease": "leaf_blight",
+      "kind": "fungal",
+      "action": "Remove infected leaves; improve canopy airflow.",
+      "candidates": ["mancozeb", "copper fungicide"]
+    },
+    {
+      "crop": "orange",
+      "disease": "haunglongbing",
+      "kind": "bacterial-vector",
+      "action": "NO cure. Control psyllid vector; remove infected trees; use certified plants only. Report to horticulture officer.",
+      "candidates": ["a registered insecticide for citrus psyllid"]
+    },
+    {
+      "crop": "peach",
+      "disease": "bacterial",
+      "kind": "bacterial",
+      "action": "Copper-based sprays at leaf fall / early season; avoid overhead irrigation.",
+      "candidates": ["copper fungicide"]
+    },
+    {
+      "crop": "pepper",
+      "disease": "bacterial",
+      "kind": "bacterial",
+      "action": "Use clean seed; avoid working in wet crop; copper-based sprays.",
+      "candidates": ["copper fungicide", "streptomycin (where registered)"]
+    },
+    {
+      "crop": "potato",
+      "disease": "early_blight",
+      "kind": "fungal",
+      "action": "Remove infected leaves; protectant fungicide at first spots.",
+      "candidates": ["mancozeb", "chlorothalonil"]
+    },
+    {
+      "crop": "potato",
+      "disease": "late_blight",
+      "kind": "oomycete",
+      "action": "URGENT – spreads fast in cool humid weather. Remove infected plants; start protective + systemic sprays.",
+      "candidates": ["mancozeb", "metalaxyl-based mixture", "cymoxanil-based mixture"]
+    },
+    {
+      "crop": "squash",
+      "disease": "powdery",
+      "kind": "fungal",
+      "action": "Spray at first white patches; both leaf sides.",
+      "candidates": ["wettable sulphur", "a triazole fungicide"]
+    },
+    {
+      "crop": "strawberry",
+      "disease": "scorch",
+      "kind": "fungal",
+      "action": "Remove old infected leaves; avoid overhead watering.",
+      "candidates": ["captan", "mancozeb"]
+    },
+    {
+      "crop": "tomato",
+      "disease": "bacterial",
+      "kind": "bacterial",
+      "action": "Remove infected leaves; avoid wet handling; copper-based sprays.",
+      "candidates": ["copper oxychloride", "streptomycin (where registered)"]
+    },
+    {
+      "crop": "tomato",
+      "disease": "early_blight",
+      "kind": "fungal",
+      "action": "Remove lower infected leaves; stake plants; protectant fungicide.",
+      "candidates": ["mancozeb", "chlorothalonil"]
+    },
+    {
+      "crop": "tomato",
+      "disease": "late_blight",
+      "kind": "oomycete",
+      "action": "URGENT – remove infected plants; protective + systemic sprays.",
+      "candidates": ["mancozeb", "metalaxyl-based mixture"]
+    },
+    {
+      "crop": "tomato",
+      "disease": "leaf_mold",
+      "kind": "fungal",
+      "action": "Reduce humidity and improve ventilation; fungicide if persists.",
+      "candidates": ["chlorothalonil", "mancozeb"]
+    },
+    {
+      "crop": "tomato",
+      "disease": "septoria",
+      "kind": "fungal",
+      "action": "Remove infected lower leaves; mulch; protectant fungicide.",
+      "candidates": ["mancozeb", "chlorothalonil"]
+    },
+    {
+      "crop": "tomato",
+      "disease": "spider",
+      "kind": "mite",
+      "action": "Check leaf undersides; avoid dusty/dry stress; use a miticide (not a fungicide).",
+      "candidates": ["abamectin", "spiromesifen", "wettable sulphur"]
+    },
+    {
+      "crop": "tomato",
+      "disease": "target",
+      "kind": "fungal",
+      "action": "Remove infected leaves; improve airflow; protectant fungicide.",
+      "candidates": ["mancozeb", "azoxystrobin"]
+    },
+    {
+      "crop": "tomato",
+      "disease": "yellow_leaf",
+      "kind": "virus-vector",
+      "action": "NO cure. Remove and destroy infected plants; control whitefly; use nets/resistant varieties.",
+      "candidates": ["a registered insecticide for whitefly", "neem oil as supportive control"]
+    },
+    {
+      "crop": "tomato",
+      "disease": "mosaic",
+      "kind": "virus",
+      "action": "NO cure. Remove infected plants; wash hands/tools; no tobacco handling before touching plants.",
+      "candidates": []
+    }
+  ]
+}
