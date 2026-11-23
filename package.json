@@ -5,6 +5,6 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "test": "node --test tests/domain.test.mjs tests/farmer.test.mjs tests/premium.test.mjs tests/advisory.test.mjs"
+    "test": "node --test tests/domain.test.mjs tests/farmer.test.mjs tests/premium.test.mjs tests/advisory.test.mjs tests/real_model.test.mjs"
   }
 }

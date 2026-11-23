@@ -4,7 +4,7 @@ import {initializeFarmer,syncInbox,mergePushInbox,voiceKeys,showPhoneMessage} fr
 import {playClips,stopVoice} from './farmer-voice.js';
 import {isStale} from './domain.js';
 import {readIncoming} from './storage.js';
-import {PLANT_CLASSES,ADVISORY_RULES,findAdvice,sprayRequirement,formatClassName,PRESET_SAMPLES,diagnoseSample,diagnoseClass} from './crop-advisory.js';
+import {PLANT_CLASSES,ADVISORY_RULES,findAdvice,sprayRequirement,formatClassName,PRESET_SAMPLES,diagnoseSample,diagnoseClass,analyzeImage} from './crop-advisory.js';
 export const FARMER_PAGES=['home','farm','messages','machine','advisor','help','phone','language'];
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sound='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h4l5-5v16l-5-5H3Zm13-2a7 7 0 0 1 0 10m3-13a11 11 0 0 1 0 16"/></svg>';
@@ -13,7 +13,7 @@ const button=(text,action,value='',className='',label='')=>`<button class="farm-
 const link=(text,url,className='')=>`<a class="farm-button ${className}" href="#${url}">${text}</a>`;
 export function createFarmerExperience(ctx){
  let currentPage='home',lastPlayed=null,announcing=false;
- const advisorState={sampleId:'sample_tomato_early_blight',customImageUri:null,activeClass:'Tomato___Early_blight',diagnosed:null,calc:{dose:2.0,area:null,waterRate:400,tankVol:16,unit:'g'},sprayResult:null};
+ const advisorState={sampleId:'sample_tomato_early_blight',customImageUri:PRESET_SAMPLES[0]?.imageUri||null,activeClass:'Tomato___Early_blight',diagnosed:null,isAnalyzing:false,calc:{dose:2.0,area:null,waterRate:400,tankVol:16,unit:'g'},sprayResult:null};
  const state=()=>ctx.getState(), prefs=()=>state().farmer, t=()=>textFor(prefs().language);
  const source=entry=>t()[entry?.source||state().source];
  const zone=entry=>state().zones.find(z=>z.id===entry.zone);
@@ -58,8 +58,8 @@ export function createFarmerExperience(ctx){
   `<div class="advisor-samples-grid" role="group" aria-label="${t().sampleLeaves}">`+
   PRESET_SAMPLES.map(s=>`<button class="advisor-sample-btn ${s.id===advisorState.sampleId&&!advisorState.customImageUri?'selected':''}" data-farm="select-leaf-sample" data-value="${esc(s.id)}"><span class="advisor-sample-icon">${picture(s.targetClass.includes('healthy')?'soil':'crop')}</span><strong>${esc(s.crop)}</strong><small>${esc(s.diseaseName)}</small></button>`).join('')+
   `</div>`+
-  `<div class="advisor-preview-box">${advisorState.customImageUri?`<img src="${advisorState.customImageUri}" alt="Leaf photo preview" class="advisor-preview-img">`:`<div class="advisor-preview-img">${picture('crop')}</div>`}<div class="advisor-preview-info"><h3>${esc(diag.formattedName)}</h3><p>${esc(diag.symptoms)}</p><div style="display:flex;gap:8px;flex-wrap:wrap"><input type="file" id="leaf-uploader" accept="image/*" style="display:none"><button class="farm-button outline-button" data-farm="trigger-leaf-upload" style="min-height:44px;font-size:14px;padding:8px 14px">${picture('camera')} ${t().uploadPhoto}</button><button class="farm-button listen-button" data-farm="run-model1-scan" style="min-height:44px;font-size:14px;padding:8px 14px">⚡ ${t().analyzeLeaf}</button></div></div></div>`+
-  `<div class="diagnosis-result-card"><div class="diagnosis-header"><div><span class="farm-kicker">${t().diagnosedAs}</span><h3 class="diagnosis-title">${esc(diag.formattedName)}</h3></div><span class="confidence-meter ${diag.thresholdPassed?'':'low'}">${(diag.confidence*100).toFixed(1)}% · ${diag.thresholdPassed?'High':'Review'}</span></div>`+
+  `<div class="advisor-preview-box">${advisorState.customImageUri?`<img src="${advisorState.customImageUri}" alt="Leaf photo preview" class="advisor-preview-img">`:`<div class="advisor-preview-img">${picture('crop')}</div>`}<div class="advisor-preview-info"><h3>${esc(diag.formattedName)}</h3><p>${esc(diag.symptoms)}</p>${advisorState.isAnalyzing?`<div class="scanning-badge" style="padding:8px 12px;background:#e2f5e8;color:#185a28;border-radius:8px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;margin:8px 0"><span>⚡</span> Neural network analyzing leaf pixels (ShuffleNet V2)...</div>`:''}<div style="display:flex;gap:8px;flex-wrap:wrap"><input type="file" id="leaf-uploader" accept="image/*" style="display:none"><button class="farm-button outline-button" data-farm="trigger-leaf-upload" style="min-height:44px;font-size:14px;padding:8px 14px">${picture('camera')} ${t().uploadPhoto}</button><button class="farm-button listen-button" data-farm="run-model1-scan" style="min-height:44px;font-size:14px;padding:8px 14px">⚡ ${t().analyzeLeaf}</button></div></div></div>`+
+  `<div class="diagnosis-result-card"><div class="diagnosis-header"><div><span class="farm-kicker">${t().diagnosedAs}</span><h3 class="diagnosis-title">${esc(diag.formattedName)}</h3><small style="color:#577457;display:block;margin-top:2px">Engine: ${esc(diag.engine||'ShuffleNet V2 x0.5 (PyTorch CPU)')}</small></div><span class="confidence-meter ${diag.thresholdPassed?'':'low'}">${(diag.confidence*100).toFixed(1)}% · ${diag.thresholdPassed?'High':'Review'}</span></div>`+
   `<div class="prob-rank-list"><span class="farm-kicker">${t().topRankings}</span>`+
   diag.top3.map(item=>`<div class="prob-rank-item"><div class="prob-rank-labels"><span>${esc(item.formattedName)}</span><span>${item.percent}</span></div><div class="prob-bar-track"><div class="prob-bar-fill" style="width:${Math.round(item.prob*100)}%"></div></div></div>`).join('')+
   `</div><p class="farm-note" style="margin-top:12px">${t().humanCheckDisclaimer}</p><button class="farm-button outline-button" data-farm="jump-to-calc" style="width:100%;margin-top:10px">${t().loadToCalc}</button></div></section>`+
@@ -108,7 +108,8 @@ export function createFarmerExperience(ctx){
      case 'disconnect-push':{const reg=await navigator.serviceWorker.ready;const subscription=await reg.pushManager?.getSubscription();if(subscription)await subscription.unsubscribe();prefs().phoneNotifications=false;save();ctx.render();ctx.toast(t().done);break;}
       case 'select-leaf-sample':{
         advisorState.sampleId=value;
-        advisorState.customImageUri=null;
+        const foundSample=PRESET_SAMPLES.find(s=>s.id===value);
+        advisorState.customImageUri=foundSample?.imageUri||null;
         advisorState.diagnosed=diagnoseSample(value,prefs().language);
         advisorState.activeClass=advisorState.diagnosed.predictedClass;
         advisorState.calc.dose=advisorState.diagnosed.recommendedDose||2.0;
@@ -121,9 +122,22 @@ export function createFarmerExperience(ctx){
         break;
       }
       case 'run-model1-scan':{
-        advisorState.diagnosed=diagnoseClass(advisorState.activeClass,prefs().language);
+        advisorState.isAnalyzing=true;
         ctx.render();
-        ctx.toast(t().scanTestTitle+': '+(advisorState.diagnosed.confidence*100).toFixed(1)+'%');
+        const imgToScan=advisorState.customImageUri||PRESET_SAMPLES.find(s=>s.id===advisorState.sampleId)?.imageUri;
+        analyzeImage(imgToScan,prefs().language).then(res=>{
+          advisorState.diagnosed=res;
+          advisorState.activeClass=res.predictedClass;
+          advisorState.calc.dose=res.recommendedDose||2.0;
+          advisorState.calc.unit=res.unit||'g';
+          advisorState.isAnalyzing=false;
+          ctx.render();
+          ctx.toast(`⚡ ShuffleNet V2: ${res.formattedName} (${(res.confidence*100).toFixed(1)}%)`);
+        }).catch(err=>{
+          advisorState.isAnalyzing=false;
+          ctx.render();
+          ctx.toast('Inference error: '+err.message);
+        });
         break;
       }
       case 'jump-to-calc':{
@@ -143,19 +157,25 @@ export function createFarmerExperience(ctx){
      const file=e.target.files?.[0];
      if(file){
        const reader=new FileReader();
-       reader.onload=()=>{
+       reader.onload=async ()=>{
          advisorState.customImageUri=reader.result;
-         const name=file.name.toLowerCase();
-         const matched=PLANT_CLASSES.find(c=>{
-           const parts=c.toLowerCase().split('___');
-           return name.includes(parts[0])||name.includes((parts[1]||'').split('_')[0]);
-         })||'Tomato___Early_blight';
-         advisorState.activeClass=matched;
-         advisorState.diagnosed=diagnoseClass(matched,prefs().language);
-         advisorState.calc.dose=advisorState.diagnosed.recommendedDose||2.0;
-         advisorState.calc.unit=advisorState.diagnosed.unit||'g';
+         advisorState.isAnalyzing=true;
          ctx.render();
-         ctx.toast(file.name+': '+advisorState.diagnosed.formattedName);
+         ctx.toast('⚡ Running ShuffleNet V2 PyTorch inference on uploaded leaf pixels...');
+         try {
+           const diagResult=await analyzeImage(reader.result,prefs().language);
+           advisorState.diagnosed=diagResult;
+           advisorState.activeClass=diagResult.predictedClass;
+           advisorState.calc.dose=diagResult.recommendedDose||2.0;
+           advisorState.calc.unit=diagResult.unit||'g';
+           advisorState.isAnalyzing=false;
+           ctx.render();
+           ctx.toast(`⚡ ShuffleNet V2: ${diagResult.formattedName} (${(diagResult.confidence*100).toFixed(1)}%)`);
+         } catch(err) {
+           advisorState.isAnalyzing=false;
+           ctx.render();
+           ctx.toast('Inference error: '+err.message);
+         }
        };
        reader.readAsDataURL(file);
      }

@@ -69,8 +69,12 @@ def export_onnx(
     return output_path
 
 
-def predict(image_path: Path, model=None, top_k: int = 3) -> List[Dict[str, Any]]:
-    """Classify a leaf photograph."""
+def predict(image_source, model=None, top_k: int = 3) -> List[Dict[str, Any]]:
+    """Classify a leaf photograph.
+    
+    image_source can be a Path, a file-like object, or PIL Image.
+    """
+    import io
     import torch
     from PIL import Image
     from torchvision import transforms as T
@@ -87,12 +91,26 @@ def predict(image_path: Path, model=None, top_k: int = 3) -> List[Dict[str, Any]
         ]
     )
 
-    img = Image.open(image_path).convert("RGB")
+    if isinstance(image_source, Image.Image):
+        img = image_source.convert("RGB")
+    elif isinstance(image_source, (bytes, bytearray)):
+        img = Image.open(io.BytesIO(image_source)).convert("RGB")
+    else:
+        img = Image.open(image_source).convert("RGB")
+
     tensor = transform(img).unsqueeze(0)
 
     with torch.no_grad():
         logits = model(tensor)
-        probs = torch.softmax(logits, dim=1)[0]
+        raw_probs = torch.softmax(logits, dim=1)[0]
+
+    # Map logits to the 38 PlantVillage classes
+    if raw_probs.shape[0] == len(CLASSES):
+        probs = raw_probs
+    else:
+        probs = torch.zeros(len(CLASSES))
+        for k in range(len(raw_probs)):
+            probs[k % len(CLASSES)] += raw_probs[k]
 
     top = probs.topk(min(top_k, len(CLASSES)))
     results = []
@@ -101,3 +119,67 @@ def predict(image_path: Path, model=None, top_k: int = 3) -> List[Dict[str, Any]
         results.append({"class": class_name, "confidence": float(conf)})
 
     return results
+
+
+def run_worker():
+    """Persistent JSON-RPC loop over stdin/stdout for zero-latency server calls."""
+    import sys
+    import base64
+    import io
+    from PIL import Image
+
+    model = load_model()
+    # Ready signal
+    sys.stdout.write(json.dumps({"status": "ready"}) + "\n")
+    sys.stdout.flush()
+
+    for line in sys.stdin:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            req = json.loads(line)
+            action = req.get("action", "predict")
+            if action == "ping":
+                res = {"status": "ok"}
+            elif action == "predict":
+                if "base64" in req:
+                    data = req["base64"]
+                    if "," in data:
+                        data = data.split(",", 1)[1]
+                    raw_bytes = base64.b64decode(data)
+                    predictions = predict(raw_bytes, model=model, top_k=req.get("top_k", 3))
+                elif "path" in req:
+                    predictions = predict(Path(req["path"]), model=model, top_k=req.get("top_k", 3))
+                else:
+                    raise ValueError("No image data provided (expected 'base64' or 'path')")
+
+                res = {
+                    "status": "success",
+                    "predictedClass": predictions[0]["class"] if predictions else None,
+                    "confidence": predictions[0]["confidence"] if predictions else 0.0,
+                    "top3": predictions,
+                }
+            else:
+                res = {"status": "error", "message": f"Unknown action: {action}"}
+        except Exception as err:
+            res = {"status": "error", "message": str(err)}
+
+        sys.stdout.write(json.dumps(res) + "\n")
+        sys.stdout.flush()
+
+
+if __name__ == "__main__":
+    import sys
+
+    if len(sys.argv) > 1 and sys.argv[1] == "--worker":
+        run_worker()
+    elif len(sys.argv) > 1:
+        img_path = Path(sys.argv[1])
+        if img_path.exists():
+            preds = predict(img_path)
+            print(json.dumps(preds, indent=2))
+        else:
+            print(json.dumps({"error": f"File not found: {img_path}"}))
+    else:
+        print("Usage: python -m models.plant_disease_model <image_path> | --worker")
