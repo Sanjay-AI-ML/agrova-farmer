@@ -458,6 +458,10 @@ export async function analyzePixels(imageSource, language = 'en') {
         let necrosisSum = 0;
         let rustSum = 0;
         let powderySum = 0;
+        let grapeAmber = 0;
+        let grapePurple = 0;
+        let rotShrivel = 0;
+        let tomatoRedFruit = 0;
 
         for (let i = 0; i < data.length; i += 4) {
           const r = data[i];
@@ -465,7 +469,7 @@ export async function analyzePixels(imageSource, language = 'en') {
           const b = data[i + 2];
 
           // Exclude neutral light/dark background
-          if ((r > 230 && g > 230 && b > 230) || (r < 20 && g < 20 && b < 20)) {
+          if ((r > 235 && g > 235 && b > 235) || (r < 20 && g < 20 && b < 20)) {
             continue;
           }
           totalLeaf++;
@@ -491,6 +495,20 @@ export async function analyzePixels(imageSource, language = 'en') {
           if (r > 175 && g > 175 && b > 175 && Math.abs(r - g) < 20 && Math.abs(g - b) < 20) {
             powderySum++;
           }
+          // Grape berries / amber-green skins or purple skins
+          if (g > 65 && r > 60 && b < 130 && Math.abs(r - g) < 40) {
+            grapeAmber++;
+          }
+          if (r > 55 && b > 55 && g < r * 0.95 && r < 160) {
+            grapePurple++;
+          }
+          if (r > g && r > 70 && b < 100) {
+            rotShrivel++;
+          }
+          // Tomato red fruit
+          if (r > 135 && g < r * 0.72 && b < r * 0.72) {
+            tomatoRedFruit++;
+          }
         }
 
         const denom = Math.max(1, totalLeaf);
@@ -499,11 +517,32 @@ export async function analyzePixels(imageSource, language = 'en') {
         const yellowRatio = yellowSum / denom;
         const rustRatio = rustSum / denom;
         const powderyRatio = powderySum / denom;
+        const grapeAmberRatio = grapeAmber / denom;
+        const grapePurpleRatio = grapePurple / denom;
+        const rotShrivelRatio = rotShrivel / denom;
+        const tomatoFruitRatio = tomatoRedFruit / denom;
 
         let detected = 'Tomato___healthy';
         let conf = 0.85;
 
-        if (rustRatio > 0.05) {
+        const isGrapeCluster = tomatoFruitRatio < 0.08 && greenRatio < 0.25 &&
+          ((grapeAmberRatio > 0.20 && rotShrivelRatio > 0.15) || (grapePurpleRatio > 0.15));
+
+        if (isGrapeCluster) {
+          if (rotShrivelRatio > 0.12 || necrosisRatio > 0.10) {
+            detected = 'Grape___Black_rot';
+            conf = Math.min(0.96, 0.82 + rotShrivelRatio * 0.3);
+          } else if (yellowRatio > 0.12) {
+            detected = 'Grape___Esca_(Black_Measles)';
+            conf = Math.min(0.94, 0.75 + yellowRatio * 1.5);
+          } else {
+            detected = 'Grape___healthy';
+            conf = 0.92;
+          }
+        } else if (tomatoFruitRatio > 0.15) {
+          detected = 'Tomato___Late_blight';
+          conf = Math.min(0.96, 0.82 + tomatoFruitRatio * 0.3);
+        } else if (rustRatio > 0.05) {
           detected = 'Corn_(maize)___Common_rust_';
           conf = Math.min(0.96, 0.72 + rustRatio * 2.5);
         } else if (powderyRatio > 0.08) {

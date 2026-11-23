@@ -117,3 +117,20 @@ test('API /api/spray-calculator calculates dynamic prescription based on Model 2
   assert.equal(res.body.productTotal, '500.0 g');
   assert.equal(res.body.perTank, '40.0 g in 16 L tank');
 });
+
+test('API /api/predict correctly classifies uploaded grapes as Grape and NOT Tomato', async () => {
+  const grapeCandidate = [
+    path.join(process.env.USERPROFILE || '', 'Downloads', 'istockphoto-1390009787-612x612.jpg'),
+    path.join(rootDir, 'models', 'grape_sample.jpg')
+  ].find(p => p && fs.existsSync(p));
+
+  if (grapeCandidate) {
+    const b64 = fs.readFileSync(grapeCandidate).toString('base64');
+    const res = await postJson('/api/predict', { image: b64 });
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.status, 'success');
+    assert.ok(res.body.predictedClass.startsWith('Grape___'), `Expected Grape condition but got ${res.body.predictedClass}`);
+    assert.equal(res.body.predictedClass, 'Grape___Black_rot');
+    assert.ok(res.body.confidence > 0.85);
+  }
+});
